@@ -1,10 +1,19 @@
 package chapter5
 
-import chapter5.Stream.{cons, constant, empty}
+import chapter5.Stream.{cons, constant, empty, unfold}
 import org.scalatest.funsuite.AnyFunSuite
 
 
 sealed trait Stream[+A] {
+  def takeUnfold(i: Int): Stream[A] = ???
+
+  def mapUnfold[B](f: A => B): Stream[B] = {
+    unfold(this){
+      case Cons(h, t) => Some(f(h()),t())
+      case _ => None
+    }
+  }
+
   def flatMap[B](f: A => Stream[B]): Stream[B] = {
     foldRight(empty[B])((a,b) => f(a).append(b))
   }
@@ -235,5 +244,18 @@ class PracticeTest extends AnyFunSuite {
 
   test("Exercise 5.12 onesUnfold returns infinite stream of ones") {
     assert(Stream.onesUnfold.take(5).toList == List(1,1,1,1,1))
+  }
+
+  test("Exercise 5.13 implement map with unfold") {
+    assert(Stream.apply(1, 2, 3, 4, 5).mapUnfold(_ + 1).toList == List(2,3,4,5,6))
+    assert(empty[Int].mapUnfold(_ + 1) == empty)
+    assert(Stream.apply("This", "is", "a", "lazy", "stream").mapUnfold(_.length).toList == List(4,2,1,4,6))
+  }
+
+  test("Exercise 5.13 implement take with unfold") {
+    assert(Stream.empty.takeUnfold(1) == Stream.empty)
+    assert(Stream.apply(1).takeUnfold(1).toList == Stream.apply(1).toList)
+    assert(Stream.apply(1, 2, 3, 4, 5).takeUnfold(3).toList == Stream.apply(1, 2, 3).toList)
+    assert(Stream.apply("This", "is", "a", "lazy", "stream").takeUnfold(2).toList == Stream.apply("This", "is").toList)
   }
 }
