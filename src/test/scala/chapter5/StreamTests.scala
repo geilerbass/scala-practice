@@ -5,7 +5,14 @@ import org.scalatest.funsuite.AnyFunSuite
 
 
 sealed trait Stream[+A] {
-  def zipAll[B](that: Stream[B]): Stream[(Option[A], Option[B])] = ???
+  def zipAll[B](that: Stream[B]): Stream[(Option[A], Option[B])] = {
+    unfold((this, that)) {
+      case (Cons(h1, t1), Cons(h2, t2)) => Some((Some(h1()), Some(h2())), (t1(), t2()))
+      case (Empty, Cons(h2, t2)) => Some((None, Some(h2())), (Empty, t2()))
+      case (Cons(h1, t1), Empty) => Some((Some(h1()), None), (t1(), Empty))
+      case (Empty, Empty) => None
+    }
+  }
 
   def zipWith[B,C](that: Stream[B])(f: (A,B) => C): Stream[C] = {
     unfold((this, that)) {
@@ -295,6 +302,6 @@ class PracticeTest extends AnyFunSuite {
 
   test("Exercise 5.13 implement zipAll with unfold") {
     assert(Stream.apply(1,2,3,4,5).zipAll(Stream.apply(2,3,4,5,6)).toList == List((Some(1), Some(2)), (Some(2), Some(3)), (Some(3), Some(4)), (Some(4), Some(5)), (Some(5), Some(6))))
-    assert(Stream.apply(1,2,3,4,5).zipAll(Stream.apply(2,3,4)).toList == List((Some(1), Some(2)), (Some(2), Some(3)), (Some(3), Some(4))))
+    assert(Stream.apply(1,2,3,4,5).zipAll(Stream.apply(2,3,4)).toList == List((Some(1), Some(2)), (Some(2), Some(3)), (Some(3), Some(4)), (Some(4), None), (Some(5), None)))
   }
 }
