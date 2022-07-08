@@ -75,6 +75,18 @@ case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
 object Stream {
+  val onesUnfold: Stream[Int] = {
+    constantUnfold(1)
+  }
+
+  def constantUnfold[A](i: A): Stream[A] = {
+    unfold(i)(_ => Some(i, i))
+  }
+
+  def fromUnfold(i: Int): Stream[Int] = {
+    unfold(i)(x => Some(x, x + 1))
+  }
+
   val fibsUnfold: Stream[Int] = {
     unfold((0, 1)){case (x, y) => Some(x, (y, x + y))}
   }
@@ -209,5 +221,19 @@ class PracticeTest extends AnyFunSuite {
 
   test("Exercise 5.12 fibsUnfold returns infinite Fibonacci sequence") {
     assert(Stream.fibsUnfold.take(12).toList == List(0,1,1,2,3,5,8,13,21,34,55,89))
+  }
+
+  test("Exercise 5.12 fromUnfold returns infinite stream of increasing integers") {
+    assert(Stream.fromUnfold(0).take(5).toList == List(0,1,2,3,4))
+    assert(Stream.fromUnfold(1000).take(3).toList == List(1000,1001,1002))
+  }
+
+  test("Exercise 5.12 constantUnfold returns infinite stream") {
+    assert(Stream.constantUnfold(3).take(5).toList == List(3,3,3,3,3))
+    assert(Stream.constantUnfold("a").take(3).toList == List("a","a","a"))
+  }
+
+  test("Exercise 5.12 onesUnfold returns infinite stream of ones") {
+    assert(Stream.onesUnfold.take(5).toList == List(1,1,1,1,1))
   }
 }
