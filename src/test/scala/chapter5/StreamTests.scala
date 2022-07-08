@@ -5,6 +5,22 @@ import org.scalatest.funsuite.AnyFunSuite
 
 
 sealed trait Stream[+A] {
+  def zipAll[B](that: Stream[B]): Stream[(Option[A], Option[B])] = ???
+
+  def zipWith[B,C](that: Stream[B])(f: (A,B) => C): Stream[C] = {
+    unfold((this, that)) {
+      case (Cons(h1, t1), Cons(h2, t2)) => Some(f(h1(), h2()), (t1(), t2()))
+      case _ => None
+    }
+  }
+
+  def takeWhileUnfold(p: A => Boolean): Stream[A] = {
+    unfold(this) {
+      case Cons(h, t) if p(h()) => Some(h(), t())
+      case _ => None
+    }
+  }
+
   def takeUnfold(i: Int): Stream[A] = {
     unfold(this) {
       case Cons(h, t) if i > 0 =>  Some(h(), t().takeUnfold(i - 1))
@@ -262,5 +278,23 @@ class PracticeTest extends AnyFunSuite {
     assert(Stream.apply(1).takeUnfold(1).toList == Stream.apply(1).toList)
     assert(Stream.apply(1, 2, 3, 4, 5).takeUnfold(3).toList == Stream.apply(1, 2, 3).toList)
     assert(Stream.apply("This", "is", "a", "lazy", "stream").takeUnfold(2).toList == Stream.apply("This", "is").toList)
+  }
+
+  test("Exercise 5.13 implement takeWhile with unfold") {
+    assert(Stream.apply(1,2,3,4,5).takeWhileUnfold(_ % 2 != 0).toList == List(1))
+    assert(Stream.apply(1,2,3,4,5).takeWhileUnfold(_ < 10).toList == List(1,2,3,4,5))
+    assert(Stream.apply(1,2,3,4,5).takeWhileUnfold(_ > 10) == empty)
+    assert(Empty.takeWhileUnfold(_ => false) == empty)
+    assert(Stream.apply("This", "is", "a", "lazy", "stream").takeWhileUnfold(_.length > 3).toList == Stream.apply("This").toList)
+  }
+
+  test("Exercise 5.13 implement zipWith with unfold") {
+    assert(Stream.apply(1,2,3,4,5).zipWith(Stream.apply(2,3,4,5,6))((x,y) => x + y).toList == List(3,5,7,9,11))
+    assert(Stream.apply(1,2,3,4,5).zipWith(Stream.apply(2,3,4))((x,y) => x + y).toList == List(3,5,7))
+  }
+
+  test("Exercise 5.13 implement zipAll with unfold") {
+    assert(Stream.apply(1,2,3,4,5).zipAll(Stream.apply(2,3,4,5,6)).toList == List((Some(1), Some(2)), (Some(2), Some(3)), (Some(3), Some(4)), (Some(4), Some(5)), (Some(5), Some(6))))
+    assert(Stream.apply(1,2,3,4,5).zipAll(Stream.apply(2,3,4)).toList == List((Some(1), Some(2)), (Some(2), Some(3)), (Some(3), Some(4))))
   }
 }
