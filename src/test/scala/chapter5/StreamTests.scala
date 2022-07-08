@@ -5,7 +5,12 @@ import org.scalatest.funsuite.AnyFunSuite
 
 
 sealed trait Stream[+A] {
-  def takeUnfold(i: Int): Stream[A] = ???
+  def takeUnfold(i: Int): Stream[A] = {
+    unfold(this) {
+      case Cons(h, t) if i > 0 =>  Some(h(), t().takeUnfold(i - 1))
+      case _ => None
+    }
+  }
 
   def mapUnfold[B](f: A => B): Stream[B] = {
     unfold(this){
