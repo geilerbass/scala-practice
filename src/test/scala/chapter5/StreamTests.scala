@@ -5,6 +5,37 @@ import org.scalatest.funsuite.AnyFunSuite
 
 
 sealed trait Stream[+A] {
+  def scanRight[B](init: B)(f: (A, => B) => B): Stream[B] = {
+    foldRight(init -> Stream(init)) { (a, b0) =>
+      lazy val b1 = b0
+      val b2 = f(a, b1._1)
+      (b2, cons(b2, b1._2))
+    }._2
+  }
+
+
+  def tailsWithScanRight: Stream[Stream[A]] = ???
+
+  def hasSubsequence2[A](s: Stream[A]): Boolean = {
+    tailsWithScanRight exists(_ startsWith s)
+  }
+
+  def hasSubsequence[A](s: Stream[A]): Boolean = {
+    tails exists (_ startsWith s)
+  }
+
+  def tails: Stream[Stream[A]] = {
+    unfold(this) {
+      case s@Cons(_, t) => Some(s, t())
+      case Empty => None
+    }
+  }
+
+  def exists(p: A => Boolean): Boolean = this match {
+    case Cons(h, t) => p(h()) || t().exists(p)
+    case _ => false
+  }
+
   def startsWith[A](s: Stream[A]): Boolean = {
     zipWith(s)((a1,a2) => a1 == a2).foldRight(true)((a1, a2) => a1 && a2)
 //    zipAll(s).takeWhile(_._1.isDefined).forAll {case (a1, a2) => a1 == a2}
@@ -315,5 +346,18 @@ class PracticeTest extends AnyFunSuite {
     assert(!Stream.apply(1,2,3,4,5).startsWith(Stream.apply(3,2,1)))
     assert(Stream.empty.startsWith(Stream.empty))
     assert(!Stream.apply("Some", "text", "here").startsWith(Stream.apply(1,2,3)))
+  }
+
+  test("Exercise 5.15 tails returns stream of suffixes") {
+    assert(Stream(1,2,3).hasSubsequence(Stream(2,3)))
+    assert(!Stream(1,2,3).hasSubsequence(Stream(6)))
+    assert(Stream(1,2,3).hasSubsequence(Stream()))
+  }
+
+  test("Exercise 5.16 tails using ScanRight") {
+    assert(Stream(1,2,3).scanRight(0)(_ + _).toList == List(6,5,3,0))
+    assert(Stream(1,2,3).hasSubsequence2(Stream(2,3)))
+    assert(!Stream(1,2,3).hasSubsequence2(Stream(6)))
+    assert(Stream(1,2,3).hasSubsequence2(Stream()))
   }
 }
