@@ -16,6 +16,17 @@ case class SimpleRNG(seed: Long) extends RNG {
 }
 
 object RNG {
+  def ints(count: Int)(rng: RNG):(List[Int], RNG) = {
+    if (count <= 0) {
+      (List(), rng)
+    } else {
+      val (i, r) = nonNegativeInt(rng)
+      val (l, r1) = ints(count - 1)(r)
+      (i :: l, r1)
+    }
+
+  }
+
   def double3(r: RNG):((Double, Double, Double), RNG) = {
     val (d1, r1) = double(r)
     val (d2, r2) = double(r1)
@@ -58,6 +69,7 @@ class FunctionalStateTest extends AnyFunSuite {
   test("Exercise 6.1 nonNegativeInt returns non-negative Integers only") {
     assert(RNG.nonNegativeInt(SimpleRNG(1))._1 >= 0)
     assert(RNG.nonNegativeInt(SimpleRNG(1059025964525L))._1 >= 0)
+    assert(RNG.nonNegativeInt(RNG.nonNegativeInt(SimpleRNG(1))._2)._1 == 1151252338)
   }
 
   test("Exercise 6.2 double generates random Double between 0 and 1") {
@@ -79,4 +91,7 @@ class FunctionalStateTest extends AnyFunSuite {
     assert(RNG.double3(SimpleRNG(1))._1 == (0.000179162248969078060, 0.5360936457291245, 0.2558267889544368))
   }
 
+  test("Exercise 6.4 ints generates a list of random integers") {
+    assert(RNG.ints(3)(SimpleRNG(1))._1 == List(384748, 1151252338, 549383846))
+  }
 }
