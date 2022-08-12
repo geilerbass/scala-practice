@@ -5,6 +5,11 @@ import org.scalatest.funsuite.AnyFunSuite
 
 
 sealed trait Stream[+A] {
+  def startsWith[A](s: Stream[A]): Boolean = {
+    zipWith(s)((a1,a2) => a1 == a2).foldRight(true)((a1, a2) => a1 && a2)
+//    zipAll(s).takeWhile(_._1.isDefined).forAll {case (a1, a2) => a1 == a2}
+  }
+
   def zipAll[B](that: Stream[B]): Stream[(Option[A], Option[B])] = {
     unfold((this, that)) {
       case (Cons(h1, t1), Cons(h2, t2)) => Some((Some(h1()), Some(h2())), (t1(), t2()))
@@ -303,5 +308,12 @@ class PracticeTest extends AnyFunSuite {
   test("Exercise 5.13 implement zipAll with unfold") {
     assert(Stream.apply(1,2,3,4,5).zipAll(Stream.apply(2,3,4,5,6)).toList == List((Some(1), Some(2)), (Some(2), Some(3)), (Some(3), Some(4)), (Some(4), Some(5)), (Some(5), Some(6))))
     assert(Stream.apply(1,2,3,4,5).zipAll(Stream.apply(2,3,4)).toList == List((Some(1), Some(2)), (Some(2), Some(3)), (Some(3), Some(4)), (Some(4), None), (Some(5), None)))
+  }
+
+  test("Exercise 5.14 startsWith returns true if stream starts with argument stream") {
+    assert(Stream.apply(1,2,3,4,5).startsWith(Stream.apply(1,2,3)))
+    assert(!Stream.apply(1,2,3,4,5).startsWith(Stream.apply(3,2,1)))
+    assert(Stream.empty.startsWith(Stream.empty))
+    assert(!Stream.apply("Some", "text", "here").startsWith(Stream.apply(1,2,3)))
   }
 }
