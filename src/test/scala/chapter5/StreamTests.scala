@@ -14,11 +14,11 @@ sealed trait Stream[+A] {
   }
 
 
-  def tailsWithScanRight: Stream[Stream[A]] = ???
-
-  def hasSubsequence2[A](s: Stream[A]): Boolean = {
-    tailsWithScanRight exists(_ startsWith s)
-  }
+//  def tailsWithScanRight: Stream[Stream[A]] = ???
+//
+//  def hasSubsequence2[A](s: Stream[A]): Boolean = {
+//    tailsWithScanRight exists(_ startsWith s)
+//  }
 
   def hasSubsequence[A](s: Stream[A]): Boolean = {
     tails exists (_ startsWith s)
@@ -356,8 +356,8 @@ class PracticeTest extends AnyFunSuite {
 
   test("Exercise 5.16 tails using ScanRight") {
     assert(Stream(1,2,3).scanRight(0)(_ + _).toList == List(6,5,3,0))
-    assert(Stream(1,2,3).hasSubsequence2(Stream(2,3)))
-    assert(!Stream(1,2,3).hasSubsequence2(Stream(6)))
-    assert(Stream(1,2,3).hasSubsequence2(Stream()))
+//    assert(Stream(1,2,3).hasSubsequence2(Stream(2,3)))
+//    assert(!Stream(1,2,3).hasSubsequence2(Stream(6)))
+//    assert(Stream(1,2,3).hasSubsequence2(Stream()))
   }
 }

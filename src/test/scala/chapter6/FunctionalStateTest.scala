@@ -40,6 +40,7 @@ object RNG {
     }
   }
 
+
   def intDouble(rng: RNG): ((Int, Double), RNG) = {
     val (i, r1) = nonNegativeInt(rng)
     val (d, r2) = double(r1)
@@ -55,10 +56,82 @@ object RNG {
     val (i, r) = rng.nextInt
     (if (i < 0) -(i + 1) else i, r)
   }
+
+  type Rand[+A] = RNG => (A, RNG)
+
+  val int: Rand[Int] = _.nextInt
+
+  def unit[A](a: A): Rand[A] =
+    rng => (a, rng)
+
+  def map[A,B] (s: Rand[A])(f: A => B): Rand[B] =
+    rng => {
+      val (a, rng2) = s(rng)
+      (f(a), rng2)
+    }
+
+  val doubleWithMap: Rand[Double] = {
+    map(nonNegativeInt)(_ / (Int.MaxValue.toDouble + 1))
+  }
+
+  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = {
+    rng => {
+      val (a, rng2) = ra(rng)
+      val (b, rng3) = rb(rng2)
+      (f(a, b), rng3)
+    }
+  }
+
+  def both[A,B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] = {
+    map2(ra, rb)((_, _))
+  }
+
+  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = {
+    fs.foldRight(unit(Nil: List[A]))((r, acc) => map2(r, acc)(_ :: _))
+  }
+
+  val randDoubleInt: Rand[(Double, Int)] = both(double, int)
+
+  val randIntDouble: Rand[(Int, Double)] = both(int, double)
+
+  def intsWithSequence(n: Int): Rand[List[Int]] = {
+    sequence(List.fill(n)(int))
+  }
+
+  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = {
+    rng => {
+      val (a, rng2) = f(rng)
+      g(a)(rng2)
+    }
+  }
+
+  def nonNegativeLessThan(n: Int): Rand[Int] = {
+    flatMap(nonNegativeInt) { i =>
+      val mod = i % n
+      if (i + (n-1) - mod >= 0)
+        unit(mod)
+      else nonNegativeLessThan(n)
+    }
+  }
+
+  def mapWithFlatMap[A,B](a: Rand[A])(f: A => B): Rand[B] = {
+    flatMap(a)(i => unit(f(i)))
+  }
+
+  val doubleWithMapViaFlatMap: Rand[Double] = {
+    mapWithFlatMap(nonNegativeInt)(_ / (Int.MaxValue.toDouble + 1))
+  }
+
+  def map2WithFlatMap[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A,B) => C): Rand[C] = {
+    ???
+  }
+
+  val randIntDoubleViaFlatMap: Rand[(Int, Double)] = {
+    map2WithFlatMap(int, double)((_, _))
+  }
 }
 
-
-class FunctionalStateTest extends AnyFunSuite {
+  class FunctionalStateTest extends AnyFunSuite {
 
   test("Test RNG") {
     assert(SimpleRNG(1).nextInt._1 == 384748)
@@ -94,4 +167,35 @@ class FunctionalStateTest extends AnyFunSuite {
   test("Exercise 6.4 ints generates a list of random integers") {
     assert(RNG.ints(3)(SimpleRNG(1))._1 == List(384748, 1151252338, 549383846))
   }
+
+  test("Exercise 6.5 reimplement double with Map") {
+    assert(RNG.doubleWithMap(SimpleRNG(1))._1 == 0.000179162248969078060)
+    assert(RNG.doubleWithMap(SimpleRNG(1))._1 < 1)
+    assert(RNG.doubleWithMap(SimpleRNG(1059025964525L))._1 > 0)
+    assert(RNG.doubleWithMap(SimpleRNG(1059025964525L))._1 < 1)
+  }
+
+  test("Exercise 6.6 Implement intDouble and doubleInt with map2") {
+    assert(RNG.randIntDouble(SimpleRNG(1))._1 == (384748, 0.5360936457291245))
+    assert(RNG.randDoubleInt(SimpleRNG(1))._1 == (0.000179162248969078060, -1151252339))
+  }
+
+  test("Exercise 6.7 Implement sequence for combining a list of transitions") {
+    assert(RNG.intsWithSequence(3)(SimpleRNG(1))._1 == List(384748, -1151252339, -549383847))
+  }
+
+  test("Exercise 6.8 nonNegativeLessThan implemented using flatmap") {
+    assert(RNG.nonNegativeLessThan(5)(SimpleRNG(1))._1 == 3)
+  }
+
+  test("Exercise 6.9 reimplement map in terms of flatMap") {
+    assert(RNG.doubleWithMapViaFlatMap(SimpleRNG(1))._1 == 0.000179162248969078060)
+    assert(RNG.doubleWithMapViaFlatMap(SimpleRNG(1))._1 < 1)
+    assert(RNG.doubleWithMapViaFlatMap(SimpleRNG(1059025964525L))._1 > 0)
+    assert(RNG.doubleWithMapViaFlatMap(SimpleRNG(1059025964525L))._1 < 1)
+  }
+
+//  test("Exercise 6.9 reimplement intDouble and doubleInt with map2 in terms of flatMap") {
+//    assert(RNG.randIntDoubleViaFlatMap(SimpleRNG(1))._1 == (384748, 0.5360936457291245))
+//  }
 }
