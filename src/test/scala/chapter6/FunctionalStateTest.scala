@@ -16,6 +16,7 @@ case class SimpleRNG(seed: Long) extends RNG {
 }
 
 object RNG {
+
   def ints(count: Int)(rng: RNG):(List[Int], RNG) = {
     if (count <= 0) {
       (List(), rng)
@@ -33,19 +34,18 @@ object RNG {
     val (d3, r3) = double(r2)
     ((d1,d2,d3), r3)
   }
-
   def doubleInt(r: RNG): ((Double, Int), RNG) = {
     intDouble(r) match {
       case ((i, d), r1) => ((d,i), r1)
     }
   }
 
-
   def intDouble(rng: RNG): ((Int, Double), RNG) = {
     val (i, r1) = nonNegativeInt(rng)
     val (d, r2) = double(r1)
     ((i,d), r2)
   }
+
 
   def double(rng: RNG): (Double, RNG) = {
     val (i, r) = nonNegativeInt(rng)
@@ -123,11 +123,19 @@ object RNG {
   }
 
   def map2WithFlatMap[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A,B) => C): Rand[C] = {
-    ???
+    flatMap(ra) {
+      a => flatMap(rb) {
+        b => unit(f(a, b))
+      }
+    }
   }
 
   val randIntDoubleViaFlatMap: Rand[(Int, Double)] = {
     map2WithFlatMap(int, double)((_, _))
+  }
+
+  val randDoubleIntViaFlatMap: Rand[(Double, Int)] = {
+    map2WithFlatMap(double, int)((_, _))
   }
 }
 
@@ -195,7 +203,8 @@ object RNG {
     assert(RNG.doubleWithMapViaFlatMap(SimpleRNG(1059025964525L))._1 < 1)
   }
 
-//  test("Exercise 6.9 reimplement intDouble and doubleInt with map2 in terms of flatMap") {
-//    assert(RNG.randIntDoubleViaFlatMap(SimpleRNG(1))._1 == (384748, 0.5360936457291245))
-//  }
+  test("Exercise 6.9 reimplement intDouble and doubleInt with map2 in terms of flatMap") {
+    assert(RNG.randIntDoubleViaFlatMap(SimpleRNG(1))._1 == (384748, 0.5360936457291245))
+    assert(RNG.randDoubleIntViaFlatMap(SimpleRNG(1))._1 == (0.000179162248969078060, -1151252339))
+  }
 }
