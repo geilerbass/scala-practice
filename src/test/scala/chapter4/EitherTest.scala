@@ -26,9 +26,9 @@ class EitherTest extends AnyFunSuite {
 
   test("4.6 Test map2") {
     assert(Right(1).map2(Right(2))(_ + _) == Right(3))
-    assert(Right(1).map2(Left(""))(_ + _) == Left(""))
+    assert(Right(1).map2(Left("").asInstanceOf[Either[String, Int]])(_ + _) == Left(""))
     val testValue: Either[String, Int] = Left("")
-    assert(testValue.map2(Left(""))(_ + _) == Left(""))
+    assert(testValue.map2(Left("").asInstanceOf[Either[String, Int]])(_ + _) == Left(""))
   }
 
   test("4.7 Traverse and Sequence") {

@@ -139,7 +139,10 @@ object RNG {
   }
 }
 
-  class FunctionalStateTest extends AnyFunSuite {
+
+
+
+class FunctionalStateTest extends AnyFunSuite {
 
   test("Test RNG") {
     assert(SimpleRNG(1).nextInt._1 == 384748)

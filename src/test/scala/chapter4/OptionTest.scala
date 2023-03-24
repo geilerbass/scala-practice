@@ -37,13 +37,13 @@ class OptionTest extends AnyFunSuite {
 
   test("4.3 Test map2") {
     assert(map2(Some(1),Some(2))(_ + _) == Some(3))
-    assert(map2(Some(1),None)(_ + _) == None)
+    assert(map2(Some(1),None.asInstanceOf[Option[Int]])(_ + _) == None)
     assert(map2[Int,Int,Int](None,None)(_ + _) == None)
   }
 
   test("Test map3") {
     assert(map3(Some(1),Some(2),Some(3))(_ + _ + _) == Some(6))
-    assert(map3(Some(1),Some(2),None)(_ + _ + _) == None)
+    assert(map3(Some(1),Some(2),None.asInstanceOf[Option[Int]])(_ + _ + _) == None)
     assert(map3[Int,Int,Int,Int](None,None,None)(_ + _ + _) == None)
   }
 
